@@ -1,6 +1,6 @@
 """
 Configuration settings for the Multi-Exchange Trading Bot
-Updated with admin user configuration and Render cloud support
+Updated with admin user configuration, Render cloud support, and API key management
 Fixed path handling for logging
 """
 
@@ -20,6 +20,16 @@ ADMIN_USER_IDS = [ADMIN_USER_ID, 541761607]  # Can add more admin IDs here
 # Trading Configuration
 SANDBOX_MODE = os.getenv('SANDBOX_MODE', 'False').lower() == 'true'
 AUTHORIZATION_CODE = os.getenv('AUTHORIZATION_CODE', 'HYPE2025')
+
+# API Keys Configuration (from environment variables)
+BINANCE_API_KEY = os.getenv('BINANCE_API_KEY')
+BINANCE_SECRET = os.getenv('BINANCE_SECRET')
+BYBIT_API_KEY = os.getenv('BYBIT_API_KEY')
+BYBIT_SECRET = os.getenv('BYBIT_SECRET')
+
+# Auto-setup configuration
+AUTO_SETUP_ADMIN_API = True  # Automatically setup API for admin users
+DEFAULT_ADMIN_EXCHANGE = 'binance'  # Default exchange for admin auto-setup
 
 # Balance Strategy Configuration
 BALANCE_PERCENTAGE = float(os.getenv('BALANCE_PERCENTAGE', '0.002'))  # 0.2% of account balance
@@ -117,6 +127,30 @@ def is_admin_user(user_id: int) -> bool:
     """Check if user is an admin"""
     return user_id in ADMIN_USER_IDS
 
+def has_admin_api_keys() -> bool:
+    """Check if admin API keys are configured"""
+    return bool(BINANCE_API_KEY and BINANCE_SECRET) or bool(BYBIT_API_KEY and BYBIT_SECRET)
+
+def get_admin_api_config(exchange: str = None) -> dict:
+    """Get API configuration for admin users"""
+    if not exchange:
+        exchange = DEFAULT_ADMIN_EXCHANGE
+    
+    if exchange == 'binance' and BINANCE_API_KEY and BINANCE_SECRET:
+        return {
+            'exchange': 'binance',
+            'api_key': BINANCE_API_KEY,
+            'secret': BINANCE_SECRET
+        }
+    elif exchange == 'bybit' and BYBIT_API_KEY and BYBIT_SECRET:
+        return {
+            'exchange': 'bybit',
+            'api_key': BYBIT_API_KEY,
+            'secret': BYBIT_SECRET
+        }
+    
+    return None
+
 def validate_settings():
     """Validate configuration settings"""
     errors = []
@@ -148,6 +182,16 @@ print(f"🔧 Configuration loaded")
 print(f"📊 Balance Strategy: {BALANCE_PERCENTAGE*100}%")
 print(f"👑 Admin User: {ADMIN_USER_ID}")
 print(f"🌐 Mode: {'SANDBOX' if SANDBOX_MODE else 'LIVE'}")
+
+# API Keys status
+if has_admin_api_keys():
+    print(f"🔑 Admin API Keys: Available")
+    if BINANCE_API_KEY:
+        print(f"🟡 Binance API: Configured")
+    if BYBIT_API_KEY:
+        print(f"🟠 Bybit API: Configured")
+else:
+    print(f"🔑 Admin API Keys: Not configured")
 
 # Cloud deployment status
 if IS_CLOUD_DEPLOYMENT:
